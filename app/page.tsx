@@ -1,65 +1,118 @@
-import Image from "next/image";
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { AppState, defaultState } from '@/lib/types';
+import { Step1Design } from '@/components/Step1Design';
+import { Step2Audio } from '@/components/Step2Audio';
+import { Step3Preview } from '@/components/Step3Preview';
+import { Film, Sparkles } from 'lucide-react';
 
 export default function Home() {
+  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [state, setState] = useState<AppState>(defaultState);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load state on mount
+  useEffect(() => {
+    const saved = localStorage.getItem('cinematic_scroll_state');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setState({ ...defaultState, ...parsed, audioFile: null });
+      } catch (e) {
+        console.error('Failed to load state', e);
+      }
+    }
+    setIsLoaded(true);
+  }, []);
+
+  // Save state on change
+  useEffect(() => {
+    if (isLoaded) {
+      const { audioFile, ...serializableState } = state;
+      localStorage.setItem('cinematic_scroll_state', JSON.stringify(serializableState));
+    }
+  }, [state, isLoaded]);
+
+  const updateState = (updates: Partial<AppState>) => {
+    setState((prev) => ({ ...prev, ...updates }));
+  };
+
+  if (!isLoaded) return null; // Prevent hydration mismatch
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+    <main className="min-h-screen">
+      <div className="max-w-5xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+        
+        {/* Header */}
+        <header className="mb-12 text-center space-y-4 animate-in fade-in slide-in-from-top-8 duration-700">
+          <div className="inline-flex items-center justify-center p-3 bg-white/5 rounded-2xl border border-white/10 shadow-2xl shadow-yellow-500/10 mb-4">
+            <Film className="w-8 h-8 text-yellow-500" />
+          </div>
+          <h1 className="text-4xl md:text-5xl font-black tracking-tighter font-orbitron bg-clip-text text-transparent bg-gradient-to-r from-yellow-400 to-yellow-600">
+            CINEMATIC SCROLL
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-lg text-gray-400 max-w-2xl mx-auto flex items-center justify-center gap-2">
+            <Sparkles className="w-5 h-5 text-yellow-500/50" />
+            Create epic scrolling text videos for social media
+            <Sparkles className="w-5 h-5 text-yellow-500/50" />
           </p>
+        </header>
+
+        {/* Progress Bar */}
+        <div className="mb-12 max-w-3xl mx-auto">
+          <div className="flex items-center justify-between relative">
+            <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-white/10 rounded-full -z-10"></div>
+            <div 
+              className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-yellow-500 to-yellow-400 rounded-full -z-10 transition-all duration-500 ease-out"
+              style={{ width: `${((step - 1) / 2) * 100}%` }}
+            ></div>
+            
+            {[1, 2, 3].map((i) => (
+              <div 
+                key={i}
+                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm transition-all duration-300 ${
+                  step >= i 
+                    ? 'bg-yellow-500 text-black shadow-[0_0_15px_rgba(234,179,8,0.5)] scale-110' 
+                    : 'bg-black border-2 border-white/20 text-gray-400'
+                }`}
+              >
+                {i}
+              </div>
+            ))}
+          </div>
+          <div className="flex justify-between mt-4 text-xs font-medium text-gray-400 uppercase tracking-wider px-2">
+            <span className={step >= 1 ? 'text-yellow-500' : ''}>Design</span>
+            <span className={step >= 2 ? 'text-yellow-500' : ''}>Audio</span>
+            <span className={step >= 3 ? 'text-yellow-500' : ''}>Export</span>
+          </div>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+
+        {/* Content Area */}
+        <div className="relative min-h-[600px]">
+          {step === 1 && (
+            <Step1Design 
+              state={state} 
+              updateState={updateState} 
+              onNext={() => setStep(2)} 
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+          )}
+          {step === 2 && (
+            <Step2Audio 
+              state={state} 
+              updateState={updateState} 
+              onNext={() => setStep(3)} 
+              onBack={() => setStep(1)} 
+            />
+          )}
+          {step === 3 && (
+            <Step3Preview 
+              state={state} 
+              onBack={() => setStep(2)} 
+            />
+          )}
         </div>
-      </main>
-    </div>
+      </div>
+    </main>
   );
 }
