@@ -171,7 +171,7 @@ export function TiptapEditor({ content, onChange, placeholder }: Props) {
         </MenuButton>
       </div>
 
-      <div className="flex-1 overflow-y-auto max-h-[500px] custom-scrollbar">
+      <div className="flex-1 overflow-y-auto max-h-[400px] md:max-h-[500px] custom-scrollbar">
         <EditorContent editor={editor} />
       </div>
 

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useEffect, useRef, useState } from 'react';
 import { AppState } from '@/lib/types';
 import { ScrollingTextEngine } from '@/lib/canvas-engine';
@@ -26,6 +28,7 @@ export function Step3Preview({ state, onBack }: Props) {
   const [exportProgress, setExportProgress] = useState(0);
   const [ffmpeg] = useState(() => new FFmpeg());
   const [ffmpegLoaded, setFfmpegLoaded] = useState(false);
+
   useEffect(() => {
     const loadFFmpeg = async () => {
       const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/umd';
@@ -35,10 +38,7 @@ export function Step3Preview({ state, onBack }: Props) {
       });
 
       ffmpeg.on('progress', ({ progress }) => {
-        // FFmpeg may report negative progress if duration is unknown (common with WebM)
-        // Clamp it to 0-1 range and handle invalid values
         const safeProgress = isNaN(progress) || progress < 0 ? 0 : Math.min(1, progress);
-        // Map 0-1 to 50-100% since recording is the first 50%
         setExportProgress(50 + Math.round(safeProgress * 50));
       });
 
@@ -69,19 +69,7 @@ export function Step3Preview({ state, onBack }: Props) {
       engineRef.current.onProgress = (p) => {
         setProgress(Math.round(p * 100));
       };
-      engineRef.current.onComplete = () => {
-        setIsPlaying(false);
-        // We use a ref-like check for isRecording here to avoid dependency issues
-      };
-    }
-    return () => {
-      engineRef.current?.destroy();
-    };
-  }, [state]);
-
-  // Handle auto-stop for recording
-  useEffect(() => {
-    if (engineRef.current) {
+      
       engineRef.current.onComplete = () => {
         setIsPlaying(false);
         if (isRecording) {
@@ -89,7 +77,10 @@ export function Step3Preview({ state, onBack }: Props) {
         }
       };
     }
-  }, [isRecording]);
+    return () => {
+      engineRef.current?.destroy();
+    };
+  }, [state]);
 
   const togglePlay = () => {
     if (engineRef.current) {
@@ -106,6 +97,7 @@ export function Step3Preview({ state, onBack }: Props) {
     if (engineRef.current) {
       engineRef.current.reset();
       setIsPlaying(false);
+      setProgress(0);
     }
   };
 
@@ -120,7 +112,6 @@ export function Step3Preview({ state, onBack }: Props) {
     const engine = engineRef.current;
     const canvas = canvasRef.current;
 
-    // Use a fast speed for recording
     const TURBO_FACTOR = 4;
     const originalSpeed = state.speed;
     
@@ -128,10 +119,9 @@ export function Step3Preview({ state, onBack }: Props) {
     engine.updateConfig({ speed: originalSpeed * TURBO_FACTOR });
     engine.reset();
 
-    await recorder.start(canvas, null); // Record silent video for Turbo
+    await recorder.start(canvas, null);
     engine.play();
 
-    // Loop to check for completion
     const checkInterval = setInterval(async () => {
       if (engine.yOffset < -engine.totalHeight) {
         clearInterval(checkInterval);
@@ -154,7 +144,6 @@ export function Step3Preview({ state, onBack }: Props) {
             args.push('-i', audioFile);
           }
 
-          // Stretch video and mix audio
           args.push('-vf', `setpts=${TURBO_FACTOR}*PTS`);
           
           if (state.audioFile) {
@@ -165,7 +154,6 @@ export function Step3Preview({ state, onBack }: Props) {
           }
           
           args.push(outFile);
-          
           await ffmpeg.exec(args);
           
           const data = await ffmpeg.readFile(outFile);
@@ -173,7 +161,6 @@ export function Step3Preview({ state, onBack }: Props) {
           
           setRecordedBlob(finalBlob);
           
-          // Cleanup
           await ffmpeg.deleteFile(fastFile);
           if (audioFile) await ffmpeg.deleteFile(audioFile);
           await ffmpeg.deleteFile(outFile);
@@ -224,49 +211,53 @@ export function Step3Preview({ state, onBack }: Props) {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 glass p-6 rounded-2xl flex flex-col items-center justify-center relative min-h-[600px]">
-          <div className="relative w-full max-w-[400px] aspect-[9/16] bg-black rounded-xl overflow-hidden shadow-2xl shadow-black/50 border border-white/10 group">
-            <canvas
-              ref={canvasRef}
-              className="w-full h-full object-contain"
-            />
-            {isRecording && (
-              <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-red-500/30">
-                <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
-                <span className="text-xs font-bold text-red-500 tracking-wider">REC</span>
-              </div>
-            )}
-            
-            {/* Seek Slider Overlay (Not recorded) */}
-            {!isRecording && (
-              <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/90 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
-                <div className="flex items-center gap-4">
-                  <input 
-                    type="range"
-                    min="0"
-                    max="1"
-                    step="0.001"
-                    value={progress / 100}
-                    onChange={(e) => {
-                      const p = parseFloat(e.target.value);
-                      engineRef.current?.pause();
-                      setIsPlaying(false);
-                      engineRef.current?.setProgress(p);
-                      setProgress(Math.round(p * 100));
-                    }}
-                    className="flex-1 accent-yellow-400 h-1.5 cursor-pointer"
-                  />
-                  <span className="text-[10px] font-mono text-yellow-500 w-8">{progress}%</span>
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+        {/* Left Side: Video Preview */}
+        <div className="flex-1 w-full lg:order-first order-first">
+          <div className="glass p-3 md:p-4 rounded-2xl sticky top-4 lg:top-8 bg-black/20">
+            <div className="w-full aspect-[9/16] max-h-[50vh] lg:max-h-[85vh] rounded-xl border border-white/20 overflow-hidden shadow-2xl relative bg-black shadow-yellow-500/5 group">
+              <canvas
+                ref={canvasRef}
+                className="w-full h-full object-contain"
+              />
+              {isRecording && (
+                <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/50 backdrop-blur-md px-3 py-1.5 rounded-full border border-red-500/30">
+                  <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse" />
+                  <span className="text-xs font-bold text-red-500 tracking-wider">REC</span>
                 </div>
-              </div>
-            )}
+              )}
+              
+              {/* Seek Slider Overlay (Not recorded) */}
+              {!isRecording && (
+                <div className="absolute inset-x-0 bottom-0 p-4 md:p-6 bg-gradient-to-t from-black/90 to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <div className="flex items-center gap-4">
+                    <input 
+                      type="range"
+                      min="0"
+                      max="1"
+                      step="0.001"
+                      value={progress / 100}
+                      onChange={(e) => {
+                        const p = parseFloat(e.target.value);
+                        engineRef.current?.pause();
+                        setIsPlaying(false);
+                        engineRef.current?.setProgress(p);
+                        setProgress(Math.round(p * 100));
+                      }}
+                      className="flex-1 accent-yellow-400 h-1.5 cursor-pointer"
+                    />
+                    <span className="text-[10px] font-mono text-yellow-500 w-8">{progress}%</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        <div className="space-y-6">
-          <div className="glass p-6 rounded-2xl space-y-6">
+        {/* Right Side: Controls & Info */}
+        <div className="w-full lg:w-80 xl:w-96 space-y-4 md:space-y-6">
+          <div className="glass p-4 md:p-6 rounded-2xl space-y-6">
             <h3 className="text-xl font-bold font-orbitron flex items-center gap-2">
               <Video className="w-5 h-5 text-green-400" />
               Controls
@@ -291,46 +282,46 @@ export function Step3Preview({ state, onBack }: Props) {
               </div>
 
               <div className="grid grid-cols-3 gap-3">
-              <button
-                onClick={togglePlay}
-                disabled={isRecording}
-                className="flex flex-col items-center justify-center gap-2 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
-                <span className="text-xs font-medium">{isPlaying ? 'Pause' : 'Play'}</span>
-              </button>
-              <button
-                onClick={reset}
-                disabled={isRecording}
-                className="flex flex-col items-center justify-center gap-2 p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <RotateCcw className="w-6 h-6" />
-                <span className="text-xs font-medium">Reset</span>
-              </button>
-              <button
-                onClick={isRecording && !isExporting ? stopRecording : startRecording}
-                disabled={isExporting}
-                className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all ${
-                  isRecording 
-                    ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50' 
-                    : 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-600/20'
-                } ${isExporting ? 'opacity-50' : ''}`}
-              >
-                {isExporting ? (
-                  <Loader2 className="w-6 h-6 animate-spin" />
-                ) : (
-                  <div className={`w-6 h-6 rounded-full border-2 ${isRecording ? 'border-red-400 bg-red-400/20' : 'border-white bg-white/20'}`} />
-                )}
-                <span className="text-xs font-bold tracking-wide">
-                  {isExporting ? 'EXPORT' : isRecording ? 'STOP' : 'REC'}
-                </span>
-              </button>
+                <button
+                  onClick={togglePlay}
+                  disabled={isRecording}
+                  className="flex flex-col items-center justify-center gap-2 p-3 md:p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isPlaying ? <Pause className="w-5 h-5 md:w-6 h-6" /> : <Play className="w-5 h-5 md:w-6 h-6" />}
+                  <span className="text-[10px] md:text-xs font-medium">{isPlaying ? 'Pause' : 'Play'}</span>
+                </button>
+                <button
+                  onClick={reset}
+                  disabled={isRecording}
+                  className="flex flex-col items-center justify-center gap-2 p-3 md:p-4 bg-white/5 hover:bg-white/10 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RotateCcw className="w-5 h-5 md:w-6 h-6" />
+                  <span className="text-[10px] md:text-xs font-medium">Reset</span>
+                </button>
+                <button
+                  onClick={isRecording && !isExporting ? stopRecording : startRecording}
+                  disabled={isExporting}
+                  className={`flex flex-col items-center justify-center gap-2 p-3 md:p-4 rounded-xl transition-all ${
+                    isRecording 
+                      ? 'bg-red-500/20 text-red-400 hover:bg-red-500/30 border border-red-500/50' 
+                      : 'bg-red-600 text-white hover:bg-red-700 shadow-lg shadow-red-600/20'
+                  } ${isExporting ? 'opacity-50' : ''}`}
+                >
+                  {isExporting ? (
+                    <Loader2 className="w-5 h-5 md:w-6 h-6 animate-spin" />
+                  ) : (
+                    <div className={`w-5 h-5 md:w-6 h-6 rounded-full border-2 ${isRecording ? 'border-red-400 bg-red-400/20' : 'border-white bg-white/20'}`} />
+                  )}
+                  <span className="text-[10px] md:text-xs font-bold tracking-wide">
+                    {isExporting ? 'EXPORT' : isRecording ? 'STOP' : 'REC'}
+                  </span>
+                </button>
+              </div>
             </div>
-          </div>
 
             {(isRecording || isExporting) && (
               <div className="pt-4 space-y-2 animate-in fade-in">
-                <div className="flex justify-between text-xs font-medium text-gray-400">
+                <div className="flex justify-between text-[10px] font-medium text-gray-400 uppercase tracking-wider">
                   <span>{isExporting ? 'Turbo Processing' : 'Recording Progress'}</span>
                   <span>{isExporting ? `${exportProgress}%` : `${progress}%`}</span>
                 </div>
@@ -380,7 +371,7 @@ export function Step3Preview({ state, onBack }: Props) {
               </div>
               <div className="flex justify-between">
                 <span>Format</span>
-                <span className="text-white font-medium">WebM (VP9/VP8)</span>
+                <span className="text-white font-medium">{recordedBlob?.type.includes('mp4') ? 'MP4 (Standard)' : 'WebM (Native)'}</span>
               </div>
               <div className="flex justify-between">
                 <span>Audio</span>

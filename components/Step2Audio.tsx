@@ -125,21 +125,21 @@ export function Step2Audio({ state, updateState, onNext, onBack }: Props) {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="glass p-8 rounded-2xl space-y-8 text-center">
-        <div className="mx-auto w-16 h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/30">
-          <Music className="w-8 h-8 text-white" />
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+      <div className="glass p-4 md:p-8 rounded-2xl space-y-6 md:space-y-8 text-center">
+        <div className="mx-auto w-12 h-12 md:w-16 md:h-16 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-full flex items-center justify-center shadow-lg shadow-purple-500/30">
+          <Music className="w-6 h-6 md:w-8 md:h-8 text-white" />
         </div>
         
         <div>
-          <h2 className="text-3xl font-bold mb-2 font-orbitron">Audio Integration</h2>
-          <p className="text-gray-400 max-w-md mx-auto">
+          <h2 className="text-2xl md:text-3xl font-bold mb-2 font-orbitron">Audio Integration</h2>
+          <p className="text-gray-400 text-sm md:text-base max-w-md mx-auto">
             Upload an epic background track to accompany your scrolling text. Supported formats: MP3, WAV.
           </p>
         </div>
 
         {!state.audioFile ? (
-          <div className="relative border-2 border-dashed border-white/20 rounded-xl p-12 hover:border-purple-500/50 transition-colors group cursor-pointer">
+          <div className="relative border-2 border-dashed border-white/20 rounded-xl p-8 md:p-12 hover:border-purple-500/50 transition-colors group cursor-pointer">
             <input
               type="file"
               accept=".mp3, .wav"
@@ -147,48 +147,48 @@ export function Step2Audio({ state, updateState, onNext, onBack }: Props) {
               className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
             />
             <div className="flex flex-col items-center gap-4 text-gray-400 group-hover:text-purple-400 transition-colors">
-              <Upload className="w-10 h-10" />
-              <span className="font-medium">Click or drag audio file here</span>
+              <Upload className="w-8 h-8 md:w-10 md:h-10" />
+              <span className="font-medium text-sm md:text-base">Click or drag audio file here</span>
             </div>
           </div>
         ) : (
-          <div className="bg-black/40 border border-white/10 rounded-xl p-6 flex flex-col gap-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center">
-                  <Music className="w-6 h-6 text-purple-400" />
+          <div className="bg-black/40 border border-white/10 rounded-xl p-4 md:p-6 flex flex-col gap-6">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4 w-full sm:w-auto">
+                <div className="w-10 h-10 md:w-12 md:h-12 bg-purple-500/20 rounded-lg flex items-center justify-center shrink-0">
+                  <Music className="w-5 h-5 md:w-6 h-6 text-purple-400" />
                 </div>
-                <div className="text-left">
+                <div className="text-left min-w-0 flex-1">
                   <p className="font-medium text-white truncate max-w-[200px] sm:max-w-xs">
                     {state.audioFile.name}
                   </p>
-                  <p className="text-sm text-gray-400">
+                  <p className="text-xs md:text-sm text-gray-400">
                     {(state.audioFile.size / 1024 / 1024).toFixed(2)} MB
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 md:gap-3">
                 <button
                   onClick={togglePlay}
-                  className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+                  className="p-2.5 md:p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
                   title={isPlaying ? "Pause" : "Play"}
                 >
-                  {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
+                  {isPlaying ? <Pause className="w-4 h-4 md:w-5 md:h-5" /> : <Play className="w-4 h-4 md:w-5 md:h-5" />}
                 </button>
                 <button
                   onClick={stopAudio}
-                  className="p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
+                  className="p-2.5 md:p-3 bg-white/10 hover:bg-white/20 rounded-full transition-colors"
                   title="Stop"
                 >
-                  <Square className="w-5 h-5" />
+                  <Square className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
                 <button
                   onClick={removeAudio}
-                  className="p-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-full transition-colors"
+                  className="p-2.5 md:p-3 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-full transition-colors"
                   title="Remove Audio"
                 >
-                  <Trash2 className="w-5 h-5" />
+                  <Trash2 className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
               </div>
             </div>

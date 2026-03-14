@@ -98,11 +98,11 @@ export function Step1Design({ state, updateState, onNext }: Props) {
   };
 
   return (
-    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-      <div className="flex flex-col lg:flex-row gap-8">
+    <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 pb-10">
+      <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
         {/* Left Side: Forms */}
-        <div className="flex-1 space-y-6">
-          <div className="glass p-6 rounded-2xl space-y-6">
+        <div className="flex-1 space-y-4 md:space-y-6">
+          <div className="glass p-4 md:p-6 rounded-2xl space-y-4 md:space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold flex items-center gap-2 font-orbitron text-yellow-500">
                 <Type className="w-6 h-6" />
@@ -133,11 +133,13 @@ export function Step1Design({ state, updateState, onNext }: Props) {
 
               <div>
                 <label className="block text-sm font-medium text-gray-300 mb-2">Story Text (Rich Content)</label>
-                <TiptapEditor 
-                  content={state.content} 
-                  onChange={(content) => updateState({ content })}
-                  placeholder="Write your cinematic story here... Use Bold, Italics, and add Images!"
-                />
+                <div className="min-h-[250px] md:min-h-[auto]">
+                  <TiptapEditor 
+                    content={state.content} 
+                    onChange={(content) => updateState({ content })}
+                    placeholder="Write your cinematic story here... Use Bold, Italics, and add Images!"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -324,15 +326,15 @@ export function Step1Design({ state, updateState, onNext }: Props) {
         </div>
 
         {/* Right Side: Live Preview (9:16 Aspect Ratio) */}
-        <div className="w-full lg:w-80 xl:w-96 shrink-0">
-          <div className="glass p-4 rounded-2xl sticky top-8 space-y-4">
+        <div className="w-full lg:w-80 xl:w-96 shrink-0 lg:order-last order-first">
+          <div className="glass p-3 md:p-4 rounded-2xl sticky top-4 lg:top-8 space-y-4">
             <h3 className="text-sm font-semibold flex items-center gap-2 text-gray-400 uppercase tracking-widest">
               <Wand2 className="w-4 h-4" />
               Live Preview
             </h3>
             
             <div 
-              className="w-full aspect-[9/16] rounded-xl border border-white/20 overflow-hidden shadow-2xl relative bg-black shadow-yellow-500/5 group flex flex-col"
+              className="w-full aspect-[9/16] max-h-[50vh] lg:max-h-none rounded-xl border border-white/20 overflow-hidden shadow-2xl relative bg-black shadow-yellow-500/5 group flex flex-col"
             >
               <div className="flex-1 relative flex items-center justify-center overflow-hidden">
                 <canvas
