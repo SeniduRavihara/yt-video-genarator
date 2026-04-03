@@ -248,7 +248,7 @@ export class ScrollingTextEngine {
       });
     }
 
-    this.totalHeight = currentY + 200;
+    this.totalHeight = currentY + 20;
     this.offscreenCanvas.height = Math.max(1, this.totalHeight);
 
     // Context is clean after resize

@@ -20,6 +20,7 @@ export function Step3Preview({ state, onBack }: Props) {
   const recorderRef = useRef<Recorder | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
+  const isRecordingRef = useRef(false);
   const [recordedBlob, setRecordedBlob] = useState<Blob | null>(null);
   const [progress, setProgress] = useState(0);
   const [showStudio, setShowStudio] = useState(false);
@@ -57,6 +58,7 @@ export function Step3Preview({ state, onBack }: Props) {
       const blob = await recorderRef.current.stop();
       setRecordedBlob(blob);
       setIsRecording(false);
+      isRecordingRef.current = false;
       engineRef.current?.pause();
       setIsPlaying(false);
       setProgress(0);
@@ -72,7 +74,7 @@ export function Step3Preview({ state, onBack }: Props) {
       
       engineRef.current.onComplete = () => {
         setIsPlaying(false);
-        if (isRecording) {
+        if (isRecordingRef.current) {
           stopRecording();
         }
       };
@@ -170,6 +172,7 @@ export function Step3Preview({ state, onBack }: Props) {
           alert('Turbo export failed. Please check the console for details.');
         } finally {
           setIsRecording(false);
+          isRecordingRef.current = false;
           setIsExporting(false);
           engine.updateConfig({ speed: originalSpeed });
           engine.setRecordingMode(false);
@@ -187,11 +190,21 @@ export function Step3Preview({ state, onBack }: Props) {
       }
       recorderRef.current = new Recorder();
       engineRef.current.setRecordingMode(true);
+      
+      // Ensure onComplete is up to date
+      engineRef.current.onComplete = () => {
+        setIsPlaying(false);
+        if (isRecordingRef.current) {
+          stopRecording();
+        }
+      };
+
       await recorderRef.current.start(canvasRef.current, state.audioFile);
       engineRef.current.reset();
       engineRef.current.play();
       setIsPlaying(true);
       setIsRecording(true);
+      isRecordingRef.current = true;
       setRecordedBlob(null);
     }
   };
